@@ -1,0 +1,8 @@
+storage:
+  none: yes
+  home: C:\Users\user\Desktop\pineal.data
+
+domains:
+  'pineal.cc': /var/www/pineal.cc
+  'spiritual.casa': /var/www/ilunafriq
+  localhost: '../www/pineal.cc'
