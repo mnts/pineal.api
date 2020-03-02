@@ -337,8 +337,8 @@ const FileSync = require('lowdb/adapters/FileSync');
 S.set = S.get = function(m, ws, cb){
 	var user = ws.session.user;
 	
-	if(m.path){
-	  let path = Path.join(Cfg.fs.domains[m.domain], m.path || '');
+	if(typeof m.path == 'string'){
+	    let path = Path.join(Cfg.fs.domains[m.domain], m.path || '');
 
 		//if(!FS.isAllowed(m.path)) return cb({error: 'not allowed'});
 
