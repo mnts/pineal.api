@@ -10,7 +10,6 @@ global.acc = global.Acc = {
 
 	captchas: {},
 
-
 	tpl: {},
 	template: function(name){
 		if(!Acc.tpl[name]){
