@@ -10,12 +10,21 @@ global.acc = global.Acc = {
 
 	captchas: {},
 
+
 	tpl: {},
 	template: function(name){
 		if(!Acc.tpl[name]){
 			let path = (name.indexOf('/')+1)?name:(cfg.templates_path + name+'.html');
-			var data = fs.readFileSync(path, 'utf8');
-			Acc.tpl[name] = whiskers.compile(data);
+
+			var upd = () => {
+				var data = fs.readFileSync(path, 'utf8');
+				Acc.tpl[name] = whiskers.compile(data);
+			}
+
+			upd();
+			fs.watchFile(path, (curr, prev) => {
+				upd();
+			});
 		}
 
 		return Acc.tpl[name];
