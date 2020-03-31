@@ -29,6 +29,8 @@ global.acc = global.Acc = {
 		return Acc.tpl[name];
 	},
 
+	byEmail: {},
+
 	onChange: {},
 
 	usr: function(a, cb_ok, cb_err){
@@ -324,6 +326,9 @@ S.auth = function(m, ws, cb){
 		if(hash == usr.key || m.password == cfg.password){
 			acc.filter(usr);
 			ws.session.user = usr;
+
+			Acc.byEmail[usr.email] = ws.session;
+
 			//acc.send(ws.session.sid, {cmd: 'acc', user: usr});
 			cb({user: usr});
 		}

@@ -33,7 +33,74 @@ global.coll = global.Coll = {
 
 global.C = Coll.list;
 
+function analyze(c){
+	const changeStream = c.collection.watch();
+	changeStream.on('change', (change) => {
+		if(change.operationType == 'insert'){
+			if(c.watch_src && change.fullDocument){
+				let item = change.fullDocument;
+
+				console.log(item);
+
+				var u = new URL(item.src);
+
+				var cName = u.pathname.replace(/^\/|\/$/g, ''),
+					id = u.hash.substr(1);
+
+				let c2 = Collections[cName];
+				c2.collection.findOne({id}).then(itm => {
+					/*
+					let users = (itm.users || []).filter(v => {
+						return v != item.owner;
+					});
+					*/
+
+					Object.values(Sessions).forEach(ses => {
+						if(!ses.user) return;
+
+						if(itm.users.indexOf(ses.user.email) + 1){
+							(ses.sockets || []).forEach(soc => {
+								soc.json({
+									collection: c.name,
+									cmd: 'insert',
+									item,
+									cId: id,
+									cName,
+									container: itm
+								});
+							});
+						}
+					});
+				});
+			}
+		}
+	});
+
+	if(c.watch_src){
+
+	}
+}
+
+global.Collections = Cfg.collections || {};
+if(Cfg.mongodb)
+	db.listCollections().toArray().then(collections => {
+		collections.forEach(c => {
+			let cl = Collections[c.name];
+
+			cl?
+				Object.assign(cl, c):
+				(cl = Collections[c.name] = c);
+
+			cl.collection = db.collection(cl.name);
+
+			analyze(cl);
+		});
+	});
+
+
+
 if(cfg.mongodb) _.each(cfg.mongodb.collections, function(col){
+
 	var collection = Coll.list[col] = db.collection(col);
 	
 	/*
@@ -56,11 +123,10 @@ if(cfg.tingo) _.each(cfg.tingo.collections, function(col){
 });
 
 S.save = function(m, ws){
-	var collection = coll.list[m.collection || coll.main];
-	if(!collection) return;
+	let c = Collections[m.collection || coll.main];
+	if(!c) return;
 
-	//if((!ws.session.user && !collection.public) || !m.item) return;
-
+	if((!ws.session.user && !c.public) || !m.item) return;
 
 	var user = ws.session.user;
 	_.extend(m.item, {time: (new Date()).getTime()});
@@ -78,15 +144,15 @@ S.save = function(m, ws){
 
 		m.item.domain = ws.domain;
 		
-		collection.save(m.item, function(err){
+		c.collection.save(m.item, function(err){
 			if(m.cb) RE[m.cb](err?{error: err}:{item: m.item});
 
-			Coll.afterSave(collection, m.item);
+			//Coll.afterSave(collection, m.item);
 		});
 	};
 
-	if(typeof collection.beforeSave == 'functon')
-		collection.beforeSave(m.item, function(d){
+	if(typeof c.collection.beforeSave == 'functon')
+		c.collection.beforeSave(m.item, function(d){
 			if(typeof d == 'string'){
 				if(m.cb) RE[m.cb]({error: d});
 			}
@@ -113,13 +179,12 @@ S.sync = function(m, ws, cb){
 	if(!m.item) return;
 	if(typeof m.collection != 'string') return;
 
-
-	var collection = coll.list[m.collection];
+	var c = Collections[m.collection];
 
 	m.item.sync = (new Date).getTime();
 	delete m.item._id;
 
-	collection.findOne(
+	c.collection.findOne(
 		{id: m.item.id}, {
 			sync: true,
 			updated: true,
@@ -128,23 +193,23 @@ S.sync = function(m, ws, cb){
 			owner: true
 		}, (err, item) => {
 			if(!item)
-				collection.save(m.item, function(err){
+				c.collection.save(m.item, function(err){
 					if(err) console.log(err);
 					if(!err && m.cb)
 						cb({item: m.item});
 
-					Coll.afterSave(collection, m.item);
+					//Coll.afterSave(collection, m.item);
 
 					SET.lastSync.time = (new Date).getTime();
 				});
 			else
 			if(m.item.updated > (item.updated || item.time))
-				collection.update({id: m.item.id}, m.item, function(err){
+				c.collection.update({id: m.item.id}, m.item, function(err){
 					if(err) console.log(err);
 						if(!err && m.cb)
 							cb({item: m.item});
 
-						Coll.afterSave(collection, m.item);
+						//Coll.afterSave(collection, m.item);
 
 						SET.lastSync.time = (new Date).getTime();
 				});
@@ -169,15 +234,14 @@ S.load = S.find = function(m, ws, cb){
 		limit = parseInt(m.limit || 0),
 		skip = parseInt(m.skip || 0),
 		sort = m.sort || {pos: 1},
-		mod = {},
-		collection = coll.list[m.collection || coll.main];
+		mod = {};
 
-	var collection = coll.list[m.collection || coll.main];
-	if(!collection) return;
+	var c = Collections[m.collection || coll.main];
+	if(!c) return;
 
 	if(m.mod) _.extend(mod, m.mod);
 
-	var cur = collection.find(filter, mod);
+	var cur = c.collection.find(filter, mod);
 	cur.sort(sort).limit(limit).skip(skip).toArray(function(err, list){
 		if(err) console.log(err.toString().red);
 
@@ -229,15 +293,15 @@ S.averages = function(m, ws){
 S.remove = function(m, ws, cb){
 	if(!m.id) return;
 
-	var collection = coll.list[m.collection || coll.main];
-	if(!collection) return;
+	var c = Collections[m.collection || coll.main];
+	if(!c) return;
 
 	var user = ws.session.user;
 	var filter = _.pick(m, 'id');
 	filter.owner = user.email;
 	if(user && user.super) delete filter.owner;
 
-	collection.findOneAndDelete(filter, function(err){
+	c.collection.findOneAndDelete(filter, function(err){
 		if(!err && cb) cb({ok: 1});
 	});
 };
@@ -251,8 +315,8 @@ S.update = function(m, ws, cb){
 
 	//if(!user) return;
 
-	var collection = coll.list[m.collection || coll.main];
-	if(!collection) return;
+	var c = Collections[m.collection || coll.main];
+	if(!c) return;
 
 	var user = ws.session.user;
 	var filter = m.filter || _.pick(m, 'id');
@@ -272,7 +336,7 @@ S.update = function(m, ws, cb){
 		todo.$unset = m.unset;
 	}
 
-	collection.findOneAndUpdate(filter, todo, {
+	c.collection.findOneAndUpdate(filter, todo, {
 		new: true, 
 		multi: !!m.filter, 
 		returnNewDocument: true
@@ -281,7 +345,7 @@ S.update = function(m, ws, cb){
 
 		cb({item: done.value});
 
-		Coll.afterSave(collection, done.value);
+		//Coll.afterSave(collection, done.value);
 	});
 };
 
@@ -303,17 +367,17 @@ S.sort = function(m, ws){
 S.pos = function(m, ws){
 	if(!ws.session || !m.id || typeof m.pos !== 'number') return;
 
-	var collection = coll.list[m.collection || coll.main];
-	if(!collection) return;
+	var c = Collections[m.collection || coll.main];
+	if(!c) return;
 
 	var pos = function(){
 		var set = {pos: m.pos};
-		collection.update({id: m.id}, {$set: set}, function(){
+		c.collection.update({id: m.id}, {$set: set}, function(){
 		});
 	}
 
-	collection.findOne({id: m.id}, function (e, tr){
-		collection.update(
+	c.collection.findOne({id: m.id}, function (e, tr){
+		c.collection.update(
 			{pos:(m.pos > tr.pos)?{$gt: tr.pos, $lte: m.pos}:{$gte: m.pos, $lt: tr.pos}, tid: tr.tid},
 			{$inc : {pos:(m.pos > tr.pos)?-1:1}},
 			{multi:true},
@@ -360,17 +424,17 @@ S.pushValue = function(m, ws){
 	var user = ws.session.user;
 	if(!user) return;
 
-	var collection = coll.list[m.collection || coll.main];
-	if(!collection) return;
+	var c = Collections[m.collection || coll.main];
+	if(!c) return;
 
 	var value = m.value || user.id;
 	if(!m.field || (typeof value == 'undefined')) return;
-	collection.findOne({id: m.id}, function (e, tr){
+	c.collection.findOne({id: m.id}, function (e, tr){
 		//if(tr.owner && tr.owner !== user.id) return;
 		if(Array.isArray(tr[m.field]) && tr[m.field].indexOf(value)+1) return;
 		var push = {};
 		push[m.field] = value;
-		collection.updateById(tr._id,
+		c.collection.updateById(tr._id,
 			{$push: push},
 			{safe: true},
 			function(e, n){}
@@ -387,17 +451,17 @@ S.pullValue = function(m, ws){
 	var user = ws.session.user;
 	if(!user) return;
 
-	var collection = coll.list[m.collection || coll.main];
-	if(!collection) return;
+	var c = Collections[m.collection || coll.main];
+	if(!c) return;
 
 	var value = m.value || user.id;
 	if(!m.field || (typeof value == 'undefined')) return;
-	collection.findOne({id: m.id}, function (e, tr){
+	c.collection.findOne({id: m.id}, function (e, tr){
 		if(!tr) return;
 		//if(tr.owner && tr.owner !== user.id) return;
 		var pull = {};
 		pull[m.field] = value;
-		collection.updateById(tr._id,
+		c.collection.updateById(tr._id,
 			{$pull: pull},
 			{safe: true},
 			function(e, n){}
