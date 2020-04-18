@@ -1,10 +1,12 @@
 {
-  "name": "pineal.api",
+  "name": "pineal",
   "version": "1.0.0",
   "description": "",
-  "main": "api.js",
+  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "NODE_ENV=production node ./index.js",
+    "dev": "NODE_ENV=development nodemon ./index.js"
   },
   "author": "",
   "license": "ISC",
@@ -12,15 +14,26 @@
     "cheerio": "^1.0.0-rc.3",
     "cli-color": "^1.4.0",
     "cookie": "^0.4.0",
+    "cookie-parser": "^1.4.5",
     "emailjs": "^2.2.0",
+    "express": "^4.17.1",
     "fs-extra": "^8.1.0",
     "lodash": "^4.17.15",
+    "login-with-twitter": "^1.2.2",
     "lowdb": "^1.0.0",
     "mongodb": "^3.5.3",
+    "oauth": "^0.9.15",
+    "passport": "^0.4.1",
+    "passport-facebook": "^3.0.0",
+    "passport-google": "^0.3.0",
+    "passport-twitter": "^1.0.4",
     "read-data": "^1.1.0",
+    "require-dir-all": "^0.4.15",
     "tingodb": "^0.6.1",
+    "twitter": "^1.7.1",
     "whiskers": "^0.4.0",
     "ws": "^7.1.2",
     "yamljs": "^0.3.0"
-  }
+  },
+  "devDependencies": {}
 }

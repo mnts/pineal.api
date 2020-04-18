@@ -1,5 +1,3 @@
-
-
 sys.on('loaded', ev => {
 	const reviews = db.collection('reviews');
 

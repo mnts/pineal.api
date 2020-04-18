@@ -3,15 +3,6 @@ var cheerio = require('cheerio');
 global.Sites = {
 	domains: {},
 
-	checkBot: function(agent){
-		return !(
-			agent.search(/spider/i)<0 &&
-			agent.search(/bot/i)<0 &&
-			agent.search(/yahoo/i)<0 &&
-			agent.search(/facebook/i)<0 &&
-			agent.search(/snippet/i)<0
-		)
-	}
 };
 
 global.Site = function(cfg){
@@ -36,11 +27,9 @@ global.Site = function(cfg){
 
 _.extend(Site.prototype, {
 	load: function(name, as){
-		var t = this,
-			file = t.path+"/"+name,
-			reload = function(){
-				var content = fs.readFileSync(file, "utf-8");
-				t.documents[(as || name)] = content;
+		const file = this.path+"/"+name,
+			reload = () => {
+				t.documents[as || name] = fs.readFileSync(file, "utf-8");
 			};
 
 		reload();
@@ -84,6 +73,17 @@ _.extend(Site.prototype, {
 		else
 			this.send(q.doc);
 	},
+
+	
+	checkBot: function(agent){
+		return !(
+			agent.search(/spider/i)<0 &&
+			agent.search(/bot/i)<0 &&
+			agent.search(/yahoo/i)<0 &&
+			agent.search(/facebook/i)<0 &&
+			agent.search(/snippet/i)<0
+		)
+	}
 
 	send: function(q, cont){
 		var headers = {

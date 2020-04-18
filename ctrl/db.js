@@ -1,0 +1,1 @@
+const collections = require('require-dir-all')('./collections');

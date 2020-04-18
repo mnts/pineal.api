@@ -1,6 +1,8 @@
 var fs = require('fs-extra');
 const Path = require('path');
 
+const sites = require('../ctrl/www/sites.js');
+
 global.FS = {
 	save: function(f, cb){
 		var file = {};
@@ -131,12 +133,13 @@ sys.on('loaded', function(){
 	};
 });
 
-
+/*
 GET['fs'] = function(q){
 	var path = q.uri.replace(/^\/|\/$/g, '').split('/').slice(1).join('/')
 
   query.pump(q, {path});
 };
+*/
 
 S['fs.info'] = function(m, ws, cb){
 	//if(!ws.session.user || !ws.session.user.super) return;
@@ -144,7 +147,7 @@ S['fs.info'] = function(m, ws, cb){
 	//if(!FS.isAllowed(m.path)) return cb({error: 'not allowed'});
 
   
-	var path = Path.join(Cfg.fs.domains[m.domain], m.path);
+	var path = Path.join(sites[m.domain].path, m.path);
   
 	fs.stat(path, (err, info) => {
 		if(info){
@@ -167,7 +170,7 @@ S['fs.mkdir'] = function(m, ws, cb){
 
 S['fs.list'] = function(m, ws, cb){
 	//if(!ws.session.user || !ws.session.user.super) return;
-	var path = Path.join(Cfg.fs.domains[m.domain], m.path);
+	var path = Path.join(sites[m.domain].path, m.path);
 	//if(!FS.isAllowed(m.path)) return cb({error: 'not allowed'});
 
 
@@ -194,7 +197,7 @@ S['saveStream'] = function(m, ws, cb){
 	ws.stream.end();
 	var tmpName = ws.stream.path.split('/').pop();
 	
-	var newPath = Path.join(Cfg.fs.domains[m.domain], m.path);
+	var newPath = Path.join(sites[m.domain].path, m.path);
 
 	var user = ws.session.user;
 
@@ -282,7 +285,8 @@ S.download = function(m, ws, cb){
 
 	//if(m.path && !FS.isAllowed(m.path)) return cb({error: 'not allowed'});
 
-	var path = Path.join(Cfg.fs.domains[m.domain], m.path);
+
+	var path = Path.join(sites[m.domain].path, m.path);
 
 		//fs.ensureDirSync(Cfg.path.files);
 
@@ -338,7 +342,7 @@ S.set = S.get = function(m, ws, cb){
 	var user = ws.session.user;
 	
 	if(typeof m.path == 'string'){
-	    let path = Path.join(Cfg.fs.domains[m.domain], m.path || '');
+	    let path = Path.join(sites[m.domain].path, m.path || '');
 
 		//if(!FS.isAllowed(m.path)) return cb({error: 'not allowed'});
 
@@ -452,68 +456,5 @@ S['fs.download'] = function(m, ws, cb){
 				});
 			});
 		});
-	});
-};
-
-POST.fs = function(q){
-	switch(q.p[1]){
-		case 'list':
-			var path = './static/'+(q.domain+'/').replace(/\/\.+/g,'') + (q.post.path || '');
-			fs.readdir(path, function(err, files){
-				q.end({list: files});
-			});
-			break;
-
-		case 'add':
-			if(typeof q.post.url !== 'string') return q.end({error: 'no url'});
-
-			var file = {
-				id: randomString(9)
-			};
-			if(q.user) file.owner = q.user.id;
-			file.created = (new Date()).getTime();
-			file.url = q.post.url;
-
-			db.collection(cfg.fs.collection).insert(file, {safe: true}, function(e, doc){
-				q.end({file: doc[0]});
-			});
-			break;
-
-		case 'download':
-			if(typeof q.post.url !== 'string') return q.end({error: 'no url'});
-
-			var tmpName = randomString(20),
-				tmpPath = query.pathFiles+tmpName,
-				tmpStream = fs.createWriteStream(tmpPath, {flags: 'w'});
-
-			var request = require('http').get(q.post.url, function(response){
-				response.pipe(tmpStream);
-				tmpStream.on('finish', function() {
-					tmpStream.close(function(){
-						var file = {
-							id: randomString(9)
-						};
-						if(q.user) file.owner = q.user.id;
-						file.created = (new Date()).getTime();
-
-						db.collection(cfg.fs.collection).insert(file, {safe: true}, function(e, doc){
-							fs.renameSync(tmpPath, query.pathFiles + file.id);
-							q.end({file: doc[0]});
-						});
-					});
-				});
-			});
-			break;
-	};
-};
-
-SOCK.sys = function(ws){
-	ws.on('message', function(msg){
-		if(typeof msg == 'string'){
-			var m = JSON.parse(msg);
-
-			if(m._ == 'track')
-				sys.sockets2track[m.id] = ws;
-		}
 	});
 };

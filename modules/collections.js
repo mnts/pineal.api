@@ -34,14 +34,11 @@ global.coll = global.Coll = {
 global.C = Coll.list;
 
 function analyze(c){
-	const changeStream = c.collection.watch();
-	changeStream.on('change', (change) => {
-		if(change.operationType == 'insert'){
-			if(c.watch_src && change.fullDocument){
+	if(c.watch){
+		const changeStream = c.collection.watch(c.watch.pipeline);
+		changeStream.on('change', (change) => {
+			if(change.operationType == 'insert'){
 				let item = change.fullDocument;
-
-				console.log(item);
-
 				var u = new URL(item.src);
 
 				var cName = u.pathname.replace(/^\/|\/$/g, ''),
@@ -73,11 +70,7 @@ function analyze(c){
 					});
 				});
 			}
-		}
-	});
-
-	if(c.watch_src){
-
+		});
 	}
 }
 
