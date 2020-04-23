@@ -1,47 +1,63 @@
+const axios = require('axios');
+
 var networks;
 
-sys.on('loaded', () => {
-	networks = db.collection('networks');
-});
-
-exports.network = function(session, d){
+const auth = exports.network = function(session, d){
 	if(!session) return;
+
+	const connect = network => {
+		const upd = (user) => {
+			if( !network.email ||
+				network.email == user.email || 
+				(user.emails && (user.emails.indexOf(network.email) + 1))
+			) return;
+
+			if(user.emails.indexOf(network.email));
+				user.emails.push(email);
+
+			networks.updateOne({id: user.id}, {
+				$addToSet: {emails: network.email}
+			}, r => {
+				console.log(r);
+			});
+		};
+		
+		Acc.send(session.sid, {
+			cmd: 'network',
+			network
+		});
+
+		if(session.user){
+			upd(session.user);
+		}
+		else{
+			let findBy = {id: network.owner};
+
+			if(!network.owner)
+				findBy = {$or: [
+					{email: network.email}, 
+					{emails: network.email}
+				]};
+
+			acc.db.findOne(findBy, (e, user) => {
+				if(user){
+					upd(user);
+					Acc.byEmail[user.email] = session;
+
+					acc.filter(user);
+					session.user = user;
+					Acc.send(session.sid, {cmd: 'acc', user});
+				}
+			});
+		}
+	};
 
 	var findBy = {
 		service: d.service,
 		nid: d.profile.id
 	};
 
-
-
-	networks.findOne(findBy, function(e, network){
-		if(network){
-			networks.update(
-				{_id: network._id}, 
-				{$set: {
-					token: d.token,
-					secret: d.secret
-				}},
-				r => {
-
-				}
-			);
-
-
-			if(!session.user){
-				acc.db.findOne({id: network.owner}, (e, user) => {
-					acc.filter(user);
-					session.user = user;
-
-					//Acc.byEmail[user.email] = session;
-
-					Acc.send(session.sid, {cmd: 'acc', user});
-				});
-			}
-
-			return;
-		}
-
+	networks.findOne(findBy, function(e, net){
 		var network = {
 			id: randomString(4),
 			regTime: (new Date()).getTime(),
@@ -73,7 +89,7 @@ exports.network = function(session, d){
 
 
 		if(d.service == 'twitter')
-			_.extend(network, {
+			_.extend(network, _.pick(d.profile, 'email'), {
 				title: d.profile.name
 			});
 
@@ -84,11 +100,53 @@ exports.network = function(session, d){
 			})
 		}
 		
-		networks.insert(network, (err, r) => {
-			Acc.send(session.sid, {
-				cmd: 'new_network',
-				network
+		if(!net)
+			networks.insert(network, (err, r) => {
+				connect(network);
 			});
-		});
+		else{
+			const $set = _.pick(network, 
+				'owner', 'token', 'secret', 'title', 'intro', 'email'
+			);
+
+			networks.updateOne(
+				{_id: net._id}, 
+				{$set},
+				r => {
+					console.log(r);
+					connect(net);
+				}
+			);
+
+			return;
+		}
 	});
 }
+
+
+sys.on('loaded', () => {
+	networks = db.collection('networks');
+
+	S['auth.facebook'] = async (m, ws, cb) => {
+		const r = await axios({
+			url: 'https://graph.facebook.com/me',
+			method: 'get',
+			params: {
+				fields: ['id', 'email', 'name'].join(','),
+				access_token: m.token,
+			},
+		});
+
+		console.log(r);
+
+		auth(ws.session, {
+			service: 'facebook',
+			token: m.token,
+			profile: r.data
+		});
+	};
+
+	S.auth = (m, ws, cb) => {
+		auth(ws.session, m);
+	};
+});

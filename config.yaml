@@ -90,11 +90,14 @@ www:
           secret: QRYc8rzGPIhrkuofsdWRY9hSOsXCJEj26fjaE8jl9EToAmPVQw
           access_token: 1169847530298826752-G7nE63aD1acf4YyjzYZADhsoo1DsSS
           access_secret: pUO0dqUcu9aw0HDWO35CPN9GMow9JyyvGaoOm8P7ykrj9
-    
+      
     -
       domain: 'ego.bid'
       folder: best
       auth:
+        facebook:
+          key: '512779066038351'
+          secret: 0d77948ac52fa848abfa5491ea7cb4d1
         twitter:
           key: ngA7AL76wXU2DcNhLqRtDGZfS
           secret: QRYc8rzGPIhrkuofsdWRY9hSOsXCJEj26fjaE8jl9EToAmPVQw
