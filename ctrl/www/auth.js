@@ -145,8 +145,4 @@ sys.on('loaded', () => {
 			profile: r.data
 		});
 	};
-
-	S.auth = (m, ws, cb) => {
-		auth(ws.session, m);
-	};
 });
