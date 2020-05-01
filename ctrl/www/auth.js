@@ -12,7 +12,7 @@ const auth = exports.network = function(session, d){
 				(user.emails && (user.emails.indexOf(network.email) + 1))
 			) return;
 
-			if(user.emails)
+			if(!user.emails)
 				user.emails = [];
 
 			if(user.emails.indexOf(network.email));
