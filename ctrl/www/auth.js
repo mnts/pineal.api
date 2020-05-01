@@ -48,6 +48,24 @@ const auth = exports.network = function(session, d){
 					session.user = user;
 					Acc.send(session.sid, {cmd: 'acc', user});
 				}
+				else{
+					const newAcc = {
+						email: netowrk.email,
+						title: netowrk.title,
+						id: randomString(4),
+						regTime: (new Date()).getTime()
+					};
+
+					acc.db.insertOne(newAcc, {safe: true}, (err, r) => {
+						if(err) return console.error(err);
+
+						session.user = newAcc;
+						Acc.send(session.sid, {
+							cmd: 'acc', 
+							user: newAcc
+						});
+					});
+				}
 			});
 		}
 	};

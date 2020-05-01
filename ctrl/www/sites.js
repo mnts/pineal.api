@@ -13,6 +13,6 @@ app.use((req, res, next) => {
 require('require-dir-all')('./auth');
 
 
-app.get('/', (req, res) => {
+app.get('*', (req, res) => {
 	res.send(req.site.documents['index.html']);
 });
