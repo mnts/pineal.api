@@ -76,6 +76,7 @@ email:
   sidSubject: "Forgot password request"
 
 www:
+  default: 'ego.bid'
   path: '/home/mk/www'
   sites:
     -
