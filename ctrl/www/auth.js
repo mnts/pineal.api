@@ -50,8 +50,8 @@ const auth = exports.network = function(session, d){
 				}
 				else{
 					const newAcc = {
-						email: netowrk.email,
-						title: netowrk.title,
+						email: network.email,
+						title: network.title,
 						id: randomString(4),
 						regTime: (new Date()).getTime()
 					};
