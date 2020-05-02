@@ -54,7 +54,7 @@ app.get('/auth/twitter/callback', (req, res) => {
 				ses.token = token;
 				ses.secret = secret;
 
-
+				console.log(r);
 
 				auth.network(req.session, {
 					service: 'twitter',
