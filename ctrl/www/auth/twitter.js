@@ -56,16 +56,24 @@ app.get('/auth/twitter/callback', (req, res) => {
 
 				console.log(r);
 
-				auth.network(req.session, {
-					service: 'twitter',
-					token, secret,
-					profile: {
-						name: r.screen_name,
-						id: r.user_id
-					}
-				});
+				oauth.get(
+			      'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true',
+			      token, //test user token
+			      secret, //test user secret            
+			      (e, data, rs) => {
 
-				res.send('<script>window.close();</script>');
+			      	const profile = JSON.parse(data);
+			      	console.log('profile', profile);
+
+					auth.network(req.session, {
+						service: 'twitter',
+						token, secret,
+						profile
+					});
+
+					res.send('<script>window.close();</script>');
+				  }
+				);
 			}
 	});
 });
