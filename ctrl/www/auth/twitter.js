@@ -41,7 +41,7 @@ app.get('/auth/twitter/callback', (req, res) => {
 
 	let ses = req.session.twitter;
 	
-	res.send('<script>window.close();</script>');
+	res.send('<body><script>setTimeout(() => {window.close();}, 90);</script></body>');
 
 	oauth.getOAuthAccessToken(
 		ses.requestToken, 
