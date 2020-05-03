@@ -41,35 +41,35 @@ app.get('/auth/twitter/callback', (req, res) => {
 
 	let ses = req.session.twitter;
 	
+	res.send('<script>window.close();</script>');
+
 	oauth.getOAuthAccessToken(
 		ses.requestToken, 
 		ses.requestSecret, 
 		req.query.oauth_verifier, 
 		(error, token, secret, r) => {
 			if(error)
-				res.send("Error getting OAuth access token", 500);
-			else {
-				ses.token = token;
-				ses.secret = secret;
+				return;
 
-				res.send('<script>window.close();</script>');
+			ses.token = token;
+			ses.secret = secret;
 
-				oauth.get(
-			      'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true',
-			      token, //test user token
-			      secret, //test user secret            
-			      (e, data, rs) => {
 
-			      	const profile = JSON.parse(data);
-			      	console.log('profile', profile);
+			oauth.get(
+		      'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true',
+		      token, //test user token
+		      secret, //test user secret            
+		      (e, data, rs) => {
 
-					auth.network(req.session, {
-						service: 'twitter',
-						token, secret,
-						profile
-					});
-				  }
-				);
-			}
-	});
+		      	const profile = JSON.parse(data);
+		      	console.log('profile', profile);
+
+				auth.network(req.session, {
+					service: 'twitter',
+					token, secret,
+					profile
+				});
+			  }
+			);
+});
 });
