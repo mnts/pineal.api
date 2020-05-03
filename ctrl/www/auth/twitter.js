@@ -40,9 +40,7 @@ app.get('/auth/twitter/callback', (req, res) => {
 	const oauth = apps[req.hostname];
 
 	let ses = req.session.twitter;
-
-	console.log('callback:'+req.hostname);
-
+	
 	oauth.getOAuthAccessToken(
 		ses.requestToken, 
 		ses.requestSecret, 
@@ -54,7 +52,7 @@ app.get('/auth/twitter/callback', (req, res) => {
 				ses.token = token;
 				ses.secret = secret;
 
-				console.log(r);
+				res.send('<script>window.close();</script>');
 
 				oauth.get(
 			      'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true',
@@ -70,8 +68,6 @@ app.get('/auth/twitter/callback', (req, res) => {
 						token, secret,
 						profile
 					});
-
-					res.send('<script>window.close();</script>');
 				  }
 				);
 			}
