@@ -41,7 +41,14 @@ app.get('/auth/twitter/callback', (req, res) => {
 
 	let ses = req.session.twitter;
 	
-	res.send('<body><script>setTimeout(() => {window.close();}, 90);</script></body>');
+	res.send(`
+	<body><script>
+		if(window.matchMedia('(display-mode: standalone)').matches)
+			location.href = "https://${req.hostname}";
+		else
+			window.close();
+	</script></body>
+	`);
 
 	oauth.getOAuthAccessToken(
 		ses.requestToken, 
