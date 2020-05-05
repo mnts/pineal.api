@@ -43,10 +43,11 @@ app.get('/auth/twitter/callback', (req, res) => {
 	
 	res.send(`
 	<body><script>
-		if(window.matchMedia('(display-mode: standalone)').matches)
-			location.href = "https://${req.hostname}";
-		else
+        const isPC = typeof window.orientation == 'undefined';
+		if(isPC)
 			window.close();
+		else
+			location.href = "https://${req.hostname}";
 	</script></body>
 	`);
 
