@@ -1,6 +1,7 @@
 var crypto = require('crypto');
 var qs = require('querystring');
 var whiskers = require('whiskers');
+const PubSub = require('pubsub-js');
 
 global.acc = global.Acc = {
 	db: db.collection('acc'),
@@ -30,6 +31,7 @@ global.acc = global.Acc = {
 	},
 
 	byEmail: {},
+	byId: {},
 
 	onChange: {},
 
@@ -179,10 +181,53 @@ global.acc = global.Acc = {
 				ws.send(JSON.stringify({_: 'on', u: on}));
 			}
 		}
-	}
+	},
+
+    findSessions: q => {
+    	const sessions = [];
+		Object.values(Sessions).find(ses => {
+			if(ses.user && (_.isMatch(ses.user, q) || (
+			    q.email && ses.user.emails && 
+			    (ses.user.emails.indexOf(q.email) + 1)
+			))) sessions.push(ses);
+		});
+
+		return sessions;
+    }
 };
 
 sys.once('loaded', acc.load);
+
+S.online = (m, ws, cb) => {
+	const by = _.pick(m, 'email', 'name', 'id'),
+          sessions = Acc.findSessions(by);
+
+    console.log(`user.${m.id}.connected`);
+    PubSub.subscribe(`user.${m.id}.connected`, (c, msg) => {
+    	console.log(c, msg);
+        ws.json({
+        	cmd: 'connected',
+        	id: m.id
+        });
+    });
+
+    PubSub.subscribe(`user.${m.id}.disconnected`, (c, msg) => {
+    	console.log(c, msg);
+        ws.json({
+        	cmd: 'disconnected',
+        	id: m.id
+        });
+    });
+    
+    const sockets = [];
+    sessions.forEach(ses => {
+    	(ses.sockets || []).forEach(soc => {
+    		sockets.push(soc);
+    	});
+    });
+    
+    cb({connected: !!sockets.length});
+};
 
 S.auth = function(m, ws, cb){
 	if(!m.password) return ws.error('auth', 'no password');
@@ -198,8 +243,11 @@ S.auth = function(m, ws, cb){
 
 			Acc.byEmail[usr.email] = ws.session;
 
+
 			//acc.send(ws.session.sid, {cmd: 'acc', user: usr});
 			cb({user: usr});
+            
+		    PubSub.publish(`user.${usr.id}.connected`);
 		}
 		else return cb({error: 'wrong password'});
 	});

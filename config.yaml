@@ -79,6 +79,9 @@ www:
   default: 'ego.bid'
   path: '/home/mk/www'
   sites:
+    - 
+      domain: web3.business
+      folder: web3
     -
       domain: ilunafriq.local
       folder: ilunafriq
@@ -94,7 +97,7 @@ www:
       
     -
       domain: 'ego.bid'
-      folder: best
+      folder: web3
       auth:
         facebook:
           key: '512779066038351'

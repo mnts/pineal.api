@@ -1,3 +1,5 @@
+const PubSub = require('pubsub-js');
+
 global.socket = {
 	sendOthers: function(room, id, msg){
 		var isBuf = (msg instanceof Buffer),
@@ -31,13 +33,13 @@ global.socket = {
 		
 		let origin = req.headers.origin.replace(/^http(s?):\/\//i, "");
 		ws.domain = (origin || req.headers.host || '').toLowerCase().split(':')[0];
+        
+        ws.subscriptions = [];
 
 		ws.location = {
 
 		};
-
-		console.log(_.pick(ws, 'host', 'cookie', 'url'));
-
+		
     /*
 		if(p[0])
 			(SOCK[p[0]] || fake)(ws);
@@ -154,6 +156,11 @@ global.SOCKET = function(ws){
 
 	ws.json(_.extend(_.pick(ws.session, 'sid', 'user'), {cmd: 'session'}));
 
+
+	let u = ws.session.user;
+	if(u && u.id)
+		PubSub.publish(`user.${u.id}.connected`);
+
 	ws.on('message', function(msg){
 		if(typeof msg == 'string'){
 			// missing closure bug.
@@ -208,10 +215,17 @@ global.SOCKET = function(ws){
 	});
 
 	ws.on('close', function(code, msg){
-		if(ws.session)
+		ws.subscriptions.forEach(t => PubSub.unsubscribe(t));
+
+		if(ws.session){
 			ws.session.sockets.forEach(function(sock, i){
 				if(sock == ws)
 					ws.session.sockets.splice(i,1);
 			});
+
+            let u = ws.session.user;
+            if(u && u.id && (!ws.session.sockets || !ws.session.sockets.length))
+		        PubSub.publish(`user.${u.id}.disconnected`);
+		}
 	});
 }

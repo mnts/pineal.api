@@ -158,8 +158,6 @@ sys.on('loaded', () => {
 			},
 		});
 
-		console.log(r);
-
 		auth(ws.session, {
 			service: 'facebook',
 			token: m.token,

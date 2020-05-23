@@ -29,10 +29,12 @@
     "passport-facebook": "^3.0.0",
     "passport-google": "^0.3.0",
     "passport-twitter": "^1.0.4",
+    "pubsub-js": "^1.8.0",
     "read-data": "^1.1.0",
     "require-dir-all": "^0.4.15",
     "tingodb": "^0.6.1",
     "twitter": "^1.7.1",
+    "web3": "^1.2.7",
     "whiskers": "^0.4.0",
     "ws": "^7.1.2",
     "yamljs": "^0.3.0"
