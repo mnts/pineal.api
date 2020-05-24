@@ -40,8 +40,6 @@ global.FS = {
 
 console.log('updated');
 
-
-
 global.SAVE = FS.locations;
 
 sys.on('loaded', function(){

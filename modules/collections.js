@@ -1,3 +1,5 @@
+const PubSub = require('pubsub-js');
+
 global.coll = global.Coll = {
 	list: {},
 	main: 'tree',
@@ -35,15 +37,20 @@ global.C = Coll.list;
 
 function analyze(c){
 	if(c.watch){
-		const changeStream = c.collection.watch(c.watch.pipeline);
-		changeStream.on('change', (change) => {
+		c.collection.watch().on('change', (change) => {
+			console.log(change);
+			PubSub.publish(`collections.${c.name}.change`, change);
+            
+			if(change.operationType == 'update' || change.operationType == 'replace')
+			    PubSub.publish(`item._${change.documentKey._id}.change`, change);
+
 			if(change.operationType == 'insert'){
 				let item = change.fullDocument;
 				var u = new URL(item.src);
-
+                
 				var cName = u.pathname.replace(/^\/|\/$/g, ''),
 					id = u.hash.substr(1);
-
+                
 				let c2 = Collections[cName];
 				c2.collection.findOne({id}).then(itm => {
 					/*
@@ -115,7 +122,35 @@ if(cfg.tingo) _.each(cfg.tingo.collections, function(col){
 	collection.name = col;
 });
 
-S.save = function(m, ws){
+
+
+const cleanItem = item => {
+	if(!item) return;
+	delete item._id;
+	delete item.key;
+	delete item.secret;
+	return item;
+}
+
+
+const watch = (ws, _id, id) => {
+	console.log(`item._${_id}.change`);
+	ws.subscriptions.push(PubSub.subscribe(`item._${_id}.change`, (c, change) => {
+		if(!change.updateDescription) return;
+
+		console.log(change.updateDescription);
+
+		ws.json({
+			cmd: 'change',
+			id: id,
+			fields: change.updateDescription.updatedFields
+		});
+	}));
+}
+
+
+
+S.save = function(m, ws, cb){
 	let c = Collections[m.collection || coll.main];
 	if(!c) return;
 
@@ -137,10 +172,14 @@ S.save = function(m, ws){
 
 		m.item.domain = ws.domain;
 		
-		c.collection.save(m.item, function(err){
-			if(m.cb) RE[m.cb](err?{error: err}:{item: m.item});
+		c.collection.insertOne(m.item, function(err, res){
+            if(err || !res.ops || !res.ops.length)
+                return cb({error: err || false});
+            
+            const item = res.ops[0];
 
-			//Coll.afterSave(collection, m.item);
+            cb({item});
+            watch(ws, item._id, item.id);
 		});
 	};
 
@@ -211,15 +250,6 @@ S.sync = function(m, ws, cb){
 	);
 };
 
-const cleanItem = item => {
-	if(!item) return;
-	delete item._id;
-	delete item.key;
-	delete item.secret;
-	return item;
-}
-
-
 S.load = S.find = function(m, ws, cb){
 	var user = ws.session.user;
 
@@ -239,6 +269,7 @@ S.load = S.find = function(m, ws, cb){
 		if(err) console.log(err.toString().red);
 
 		(list || []).forEach(item => {
+            watch(ws, item._id, item.id);
 			if(!user || !user.super) cleanItem(item);
 		});
 
@@ -377,6 +408,18 @@ S.pos = function(m, ws){
 			pos
 		);
 	});
+};
+
+S.seen = (m, ws, cb) => {
+	const user = ws.session.user;
+	if(!user) return;
+    
+    var c = Collections[m.collection];
+
+    const $set = {};
+    $set['seen.'+user.id] = (new Date()).getTime();
+    
+    c.collection.findOneAndUpdate({id: m.id}, {$set}, console.log);
 };
 
 S.add = function(m, ws, cb){

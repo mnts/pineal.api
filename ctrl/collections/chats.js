@@ -1,57 +1,30 @@
+const PubSub = require('pubsub-js');
+
 sys.on('loaded', ev => {
-	const chats = db.collection('chats'),
-	      messages = db.collection('messages');
+	const chats = db.collection('chats');
 
-	let upd = src => {
-		if(!src) return;
+	var last;
 
-        reviews.aggregate([
-			{$match: {
-				src,
-				num: {"$gte": 1, "$lte": 5}
-			}},
-			{"$group": {
-				_id: '$src',
-				average: {
-					"$avg": "$num"
-				},
-				total: { $sum: 1 }
-			}}
-		]).toArray((err, r) => {
-			if(err) return console.error(err);
-			let rating = r[0];
-			if(!rating) return;
-			delete rating._id;
-			
-			let u = new URL(src);
+	const msg = item => {
+		const u = new URL(item.src);
 
-            var collection = coll.list[u.pathname.substr(1)];
-            if(!collection) return;
+        const col = u.pathname.substr(1),
+		      id = u.hash.substr(1);
 
-            rating.average_int = parseInt(rating.average);
-            rating.average_round = Math.round(rating.average);
-            
-            collection.updateOne({id: u.hash.substr(1)},
-                {$set: {rating}}
-            );
-		});
+		if(col != 'chats') return;
+
+        last = {
+			text: item.text,
+			owner: item.owner
+		};
+        
+        chats.updateOne({id}, {$set: {last, time: item.time}});
 	};
 
-	messages.watch().on('change', d => {
-		if(d.operationType == 'insert'){
-            upd(d.fullDocument.src);
+	PubSub.subscribe('collections.messages.change', (c, change) => {
+		console.log('messageeess:', change);
+		if(change.operationType == 'insert'){
+            msg(change.fullDocument);
 		}
-		/*
-		else
-		if(d.operationType == 'update'){
-            reviews.findOne(
-                {_id: d.documentKey._id},
-                {src: 1}, 
-                (e, item) => {
-                    upd(item.src);
-                }
-            );
-		}
-		*/
 	});
 });

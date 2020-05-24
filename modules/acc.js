@@ -203,21 +203,23 @@ S.online = (m, ws, cb) => {
           sessions = Acc.findSessions(by);
 
     console.log(`user.${m.id}.connected`);
-    PubSub.subscribe(`user.${m.id}.connected`, (c, msg) => {
-    	console.log(c, msg);
-        ws.json({
-        	cmd: 'connected',
-        	id: m.id
-        });
-    });
-
-    PubSub.subscribe(`user.${m.id}.disconnected`, (c, msg) => {
-    	console.log(c, msg);
-        ws.json({
-        	cmd: 'disconnected',
-        	id: m.id
-        });
-    });
+    ws.subscriptions.push(
+		PubSub.subscribe(`user.${m.id}.connected`, (c, msg) => {
+			ws.json({
+				cmd: 'connected',
+				id: m.id
+			});
+		})
+	);
+    
+    ws.subscriptions.push(
+		PubSub.subscribe(`user.${m.id}.disconnected`, (c, msg) => {
+			ws.json({
+				cmd: 'disconnected',
+				id: m.id
+			});
+		})
+    );
     
     const sockets = [];
     sessions.forEach(ses => {

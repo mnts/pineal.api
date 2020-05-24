@@ -65,13 +65,13 @@ key: mk
 wait: false
 
 email:
-  admin: "Ilunafriq <support@ilunafriq.com>"
-  sender: "Ilunafriq <hello@ilunafriq.com>"
-  host: mail.ilunafriq.com
-  user: hello@ilunafriq.com
-  password: '10711612'
+  admin: "MK <mk@6d.lt>"
+  sender: "FractalOS <info@6d.lt>"
+  host: mail.6d.lt
+  user: info@6d.lt
+  password: 'fdhrt'
   port: 587
-  regSubject: "Welcome to Ilunafriq!"
+  regSubject: "Welcome!"
   reactiveSubject: "Activation"
   sidSubject: "Forgot password request"
 
@@ -79,29 +79,14 @@ www:
   default: 'ego.bid'
   path: '/home/mk/www'
   sites:
-    - 
-      domain: web3.business
-      folder: web3
-    -
-      domain: ilunafriq.local
-      folder: ilunafriq
     -
       domain: localhost
       folder: best
-      auth:
-        twitter:
-          key: ngA7AL76wXU2DcNhLqRtDGZfS
-          secret: QRYc8rzGPIhrkuofsdWRY9hSOsXCJEj26fjaE8jl9EToAmPVQw
-          access_token: 1169847530298826752-G7nE63aD1acf4YyjzYZADhsoo1DsSS
-          access_secret: pUO0dqUcu9aw0HDWO35CPN9GMow9JyyvGaoOm8P7ykrj9
-      
+    
     -
-      domain: 'ego.bid'
+      domain: ego.bid
       folder: web3
       auth:
-        facebook:
-          key: '512779066038351'
-          secret: 0d77948ac52fa848abfa5491ea7cb4d1
         twitter:
           key: ngA7AL76wXU2DcNhLqRtDGZfS
           secret: QRYc8rzGPIhrkuofsdWRY9hSOsXCJEj26fjaE8jl9EToAmPVQw
@@ -114,12 +99,21 @@ acc:
 
 mongodb:
   path: mongodb://127.0.0.1:27017/fractal
-  url: mongodb://fractal:k1P@127.0.0.1:27017
+  url: 'mongodb://fractal:k1P@127.0.0.1:27017'
   name: fractal
   journal: true
   collections: [acc, gallery, users, files, tree, neuro, comments, reviews, thumbs, orders, scores, chats, catalog, stories, sites]
 
 collections:
+  chats:
+    watch:
+      pipeline:
+        -
+          $match:
+            operationType: "update"
+      
+      on:
+        insert: true
   messages:
     watch:
       pipeline:

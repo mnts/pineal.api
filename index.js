@@ -76,11 +76,11 @@ if(Cfg.mongodb){
 			useNewUrlParser: true, 
 			useUnifiedTopology: true 
 		}
-	).then((client, no) => {
+	).then(client => {
 		global.db = client.db(Cfg.mongodb.name);
 
 		initiate();
-	});
+	}).catch(e => console.error('error', e));
 }
 
 process.on('unhandledRejection', (reason, promise) => {
