@@ -143,9 +143,10 @@ S['fs.info'] = function(m, ws, cb){
 	//if(!ws.session.user || !ws.session.user.super) return;
 
 	//if(!FS.isAllowed(m.path)) return cb({error: 'not allowed'});
-
+    const site = sites[m.domain];
+    if(!site) return console.error(m.domain) || cb({error: 'not found'});
   
-	var path = Path.join(sites[m.domain].path, m.path);
+	var path = Path.join(site.path, m.path);
   
 	fs.stat(path, (err, info) => {
 		if(info){
@@ -374,6 +375,8 @@ S.set = S.get = function(m, ws, cb){
 				var item = data[0];
 				//if(!user || !user.super) cleanItem(item);
 				cb({item});
+
+                watch_id(ws, item._id, item.id);
 			});
 		}
 		else{

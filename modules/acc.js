@@ -202,24 +202,27 @@ S.online = (m, ws, cb) => {
 	const by = _.pick(m, 'email', 'name', 'id'),
           sessions = Acc.findSessions(by);
 
-    console.log(`user.${m.id}.connected`);
-    ws.subscriptions.push(
-		PubSub.subscribe(`user.${m.id}.connected`, (c, msg) => {
-			ws.json({
-				cmd: 'connected',
-				id: m.id
-			});
-		})
-	);
+    if(!ws.subscriptions['connected_'+m.id])
+		ws.subscriptions['connected_'+m.id] = PubSub.subscribe(
+			`user.${m.id}.connected`, 
+			(c, msg) => {
+				ws.json({
+					cmd: 'connected',
+					id: m.id
+				});
+			}
+		);
     
-    ws.subscriptions.push(
-		PubSub.subscribe(`user.${m.id}.disconnected`, (c, msg) => {
-			ws.json({
-				cmd: 'disconnected',
-				id: m.id
-			});
-		})
-    );
+    if(!ws.subscriptions['disconnected_'+m.id])
+		ws.subscriptions['disconnected_'+m.id] = PubSub.subscribe(
+			`user.${m.id}.disconnected`, 
+			(c, msg) => {
+				ws.json({
+					cmd: 'disconnected',
+					id: m.id
+				});
+			}
+		);
     
     const sockets = [];
     sessions.forEach(ses => {
@@ -234,7 +237,7 @@ S.online = (m, ws, cb) => {
 S.auth = function(m, ws, cb){
 	if(!m.password) return ws.error('auth', 'no password');
 
-	acc.db.findOne(_.pick(m, 'email', 'name', 'id', '_id'), function(e, usr){
+	acc.db.findOne(_.pick(m, 'email', 'name', 'id', '_id'), (e, usr) => {
 		if(!usr) return cb({error: 'not found'});
 		
 		var hash = require('crypto').createHash('md5').update(m.password).digest("hex");

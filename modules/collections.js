@@ -133,9 +133,11 @@ const cleanItem = item => {
 }
 
 
-const watch = (ws, _id, id) => {
-	console.log(`item._${_id}.change`);
-	ws.subscriptions.push(PubSub.subscribe(`item._${_id}.change`, (c, change) => {
+global.watch_id = (ws, _id, id) => {
+	_id = _id+'';
+	if(ws.subscriptions[id]) return;
+
+	const sub = PubSub.subscribe(`item._${_id}.change`, (c, change) => {
 		if(!change.updateDescription) return;
 
 		console.log(change.updateDescription);
@@ -145,9 +147,10 @@ const watch = (ws, _id, id) => {
 			id: id,
 			fields: change.updateDescription.updatedFields
 		});
-	}));
-}
+	});
 
+	ws.subscriptions[id] = sub;
+}
 
 
 S.save = function(m, ws, cb){
@@ -179,7 +182,7 @@ S.save = function(m, ws, cb){
             const item = res.ops[0];
 
             cb({item});
-            watch(ws, item._id, item.id);
+            watch_id(ws, item._id, item.id);
 		});
 	};
 
@@ -269,7 +272,7 @@ S.load = S.find = function(m, ws, cb){
 		if(err) console.log(err.toString().red);
 
 		(list || []).forEach(item => {
-            watch(ws, item._id, item.id);
+            watch_id(ws, item._id, item.id);
 			if(!user || !user.super) cleanItem(item);
 		});
 

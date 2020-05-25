@@ -34,7 +34,7 @@ global.socket = {
 		let origin = req.headers.origin.replace(/^http(s?):\/\//i, "");
 		ws.domain = (origin || req.headers.host || '').toLowerCase().split(':')[0];
         
-        ws.subscriptions = [];
+        ws.subscriptions = {};
 
 		ws.location = {
 
@@ -215,7 +215,9 @@ global.SOCKET = function(ws){
 	});
 
 	ws.on('close', function(code, msg){
-		ws.subscriptions.forEach(t => PubSub.unsubscribe(t));
+        for(var prop in ws.subscriptions){
+        	PubSub.unsubscribe(prop);
+        }
 
 		if(ws.session){
 			ws.session.sockets.forEach(function(sock, i){
