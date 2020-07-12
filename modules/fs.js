@@ -11,7 +11,7 @@ global.FS = {
 		file.id = randomString(9);
 
 		file.created = (new Date()).getTime();
-		db.collection(cfg.fs.collection).insert(file, {safe: true}, function(e, r){
+		db.collection(cfg.fs.collection).insertOne(file, {safe: true}, function(e, r){
 			if(cb) cb(r.ops[0]);
 		});
 	},
@@ -122,7 +122,7 @@ sys.on('loaded', function(){
 					file.mime = q.req.headers['x-mime'];
 
 				file.created = (new Date()).getTime();
-				db.collection(cfg.fs.collection).insert(file, {safe: true}, function(e, r){
+				db.collection(cfg.fs.collection).insertOne(file, {safe: true}, function(e, r){
 					fs.renameSync(tmpPath, query.pathFiles + file.id);
 					q.end({file: r.ops[0]});
 				});
@@ -262,7 +262,7 @@ S['saveStream'] = function(m, ws, cb){
 
 	if(user) file.owner = user.id;
 	
-	C['files'].insert(file, (e, r) => {
+	C['files'].insertOne(file, (e, r) => {
 		/*
      	console.log('done Insertttttting: ', e, r);
 		console.log('File', file);
@@ -326,7 +326,7 @@ S['fs.clone'] = function(m, ws){
 		if(user) file.owner = user.id;
 
 
-		C[cfg.fs.collection].insert(file, {safe: true}, function(e, r){
+		C[cfg.fs.collection].insertOne(file, {safe: true}, function(e, r){
 			if(e || !r || !r.ops[0]) return cb('error inserting file');
 			fs.copySync(item.path || (Cfg.path.files + item.id), Cfg.path.files + file.id);
 			cb({file: r.ops[0]});
@@ -366,10 +366,11 @@ S.set = S.get = function(m, ws, cb){
 			var filter = _.extend({}, m.filter, {});
 			if(m.id) filter.id = m.id;
 
-			var collection = coll.list[m.collection || coll.main];
-			if(!collection) return;
 
-			collection.find(filter).toArray(function(err, data){
+        	var c = Collections[m.collection || coll.main];
+			if(!c || !c.collection) return;
+
+			c.collection.find(filter).toArray(function(err, data){
 				if(err || !data || !data[0]) return cb({err});
 
 				var item = data[0];
@@ -450,7 +451,7 @@ S['fs.download'] = function(m, ws, cb){
 					cb({done: 1});
 				}
 				else
-				db.collection(cfg.fs.collection).insert(file, {safe: true}, function(e, r){
+				db.collection(cfg.fs.collection).insertOne(file, {safe: true}, function(e, r){
 					if(!r.ops[0]) return;
 					fs.renameSync(tmpPath, Cfg.path.files + file.id);
 					RE[m.cb]({file: r.ops[0]});

@@ -82,6 +82,10 @@ function analyze(c){
 }
 
 global.Collections = Cfg.collections || {};
+Object.keys(Collections).forEach(name => {
+	Collections[name].collection = db.collection(name);
+});
+
 if(Cfg.mongodb)
 	db.listCollections().toArray().then(collections => {
 		collections.forEach(c => {
@@ -91,7 +95,6 @@ if(Cfg.mongodb)
 				Object.assign(cl, c):
 				(cl = Collections[c.name] = c);
 
-			cl.collection = db.collection(cl.name);
 
 			analyze(cl);
 		});
@@ -340,7 +343,7 @@ S.update = function(m, ws, cb){
 	var user = ws.session.user;
 
 
-	//if(!user) return;
+	if(!user) return;
 
 	var c = Collections[m.collection || coll.main];
 	if(!c) return;
@@ -348,7 +351,7 @@ S.update = function(m, ws, cb){
 	var user = ws.session.user;
 	var filter = m.filter || _.pick(m, 'id');
 
-	//if(user) filter.owner = user.email;
+	if(user) filter.owner = user.email;
 	if(user && user.super) delete filter.owner;
 
 
@@ -441,7 +444,7 @@ S.add = function(m, ws, cb){
 
 			_.extend(tr, tree.pick(q.post));
 
-			tree.db.insert(tr, {safe: true}, function(e, doc){
+			tree.db.insertOne(tr, {safe: true}, function(e, doc){
 				cb(e?{}:{item: tr});
 			});
 
@@ -574,7 +577,7 @@ S.updateView = function(m, ws){
 		        id : r.id+1,
 		    }
 
-		    db.getCollection('pix8').insert(view);
+		    db.getCollection('pix8').insertOne(view);
 		}
 		return view;
 	}, [m.path], function(err, view){

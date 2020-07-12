@@ -82,16 +82,13 @@ www:
     -
       domain: localhost
       folder: best
-    
     -
-      domain: ego.bid
-      folder: web3
-      auth:
-        twitter:
-          key: ngA7AL76wXU2DcNhLqRtDGZfS
-          secret: QRYc8rzGPIhrkuofsdWRY9hSOsXCJEj26fjaE8jl9EToAmPVQw
-          access_token: 1169847530298826752-G7nE63aD1acf4YyjzYZADhsoo1DsSS
-          access_secret: pUO0dqUcu9aw0HDWO35CPN9GMow9JyyvGaoOm8P7ykrj9
+      domain: ilunafriq.ego.bid
+      folder: ilunafriq
+    -
+      domain: ilunafriq.ego.bid
+      folder: ilunafriq
+    
 
 acc:
   captcha: false
@@ -99,12 +96,20 @@ acc:
 
 mongodb:
   path: mongodb://127.0.0.1:27017/fractal
-  url: 'mongodb://fractal:k1P@127.0.0.1:27017'
+  url: 'mongodb://127.0.0.1:27017'
   name: fractal
   journal: true
   collections: [acc, gallery, users, files, tree, neuro, comments, reviews, thumbs, orders, scores, chats, catalog, stories, sites]
 
 collections:
+  acc: {}
+  users: {}
+  tree: {}
+  files: {}
+  stories: {}
+  comments: {}
+  subscribers: {}
+  reviews: {}
   chats:
     watch:
       pipeline:

@@ -362,7 +362,7 @@ S.createUser = function(m, ws, cb){
 		newAcc.regTime = (new Date()).getTime();
 		newAcc.confirm = randomString(8);
     
-		acc.db.insert(newAcc, {safe: true}, (err, r) => {
+		acc.db.insertOne(newAcc, {safe: true}, (err, r) => {
 			/*
 			if(!r || !r.ops || !r.ops[0] || !r.length){
 				if(m.cb) RE[m.cb]({error: 'error'});
