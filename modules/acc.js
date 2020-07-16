@@ -193,6 +193,20 @@ global.acc = global.Acc = {
 		});
 
 		return sessions;
+    },
+
+    emit: function(email, msg){
+    	const sessions = Acc.findSessions({email});
+		const sockets = [];
+		sessions.forEach(ses => {
+			(ses.sockets || []).forEach(soc => {
+				sockets.push(soc);
+			});
+		});
+
+		sockets.forEach(function(ws, i){
+			ws.json(msg);
+		});
     }
 };
 

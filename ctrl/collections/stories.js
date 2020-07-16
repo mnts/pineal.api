@@ -27,8 +27,6 @@ app.get('/'+script_name+'/:name', (req, res) => {
 				external_count: 1
 			}}
 		);
-		
 		res.send($.html());
 	});
-	
 });

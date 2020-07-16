@@ -1,5 +1,7 @@
 const PubSub = require('pubsub-js');
 
+const sites = require('../ctrl/www/sites.js');
+
 global.socket = {
 	sendOthers: function(room, id, msg){
 		var isBuf = (msg instanceof Buffer),
@@ -149,6 +151,8 @@ global.SOCKET = function(ws){
 		var sid = acc.createSession();
 		ws.session = Sessions[sid];
 	}
+
+	ws.site = sites[ws.domain];
 
 	ws.sid = sid || ws.cookie.sid;
 

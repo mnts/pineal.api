@@ -17,6 +17,9 @@ exports.Site = class Site{
 			seo: false
 		}, cfg);
 
+		if(!this.currency)
+		    this.currency = Cfg.currency || 'USD';
+
 		if(!this.path)
 			this.path = Path.join(Cfg.www.path, this.folder || this.domain);
 

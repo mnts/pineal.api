@@ -17,6 +17,7 @@ modules:
   - fs
   - collections
   - mail
+  - paypal
 
 loadSet:
   - lastSync
@@ -57,7 +58,6 @@ path:
 templates_path: './templates/'
 
 devMode: true
-currency: EUR
 lang: en
 
 key: mk
@@ -82,13 +82,20 @@ www:
     -
       domain: localhost
       folder: best
+      
     -
       domain: ilunafriq.ego.bid
       folder: ilunafriq
+      title: Ilunafriq
+      paypal:
+        client_id: 'AZLdLNV4Uya3uXQRrHkC45Ysc1MG427aEu5NVaje0XjWcXiufU9hP2SBmRDL0VSGQ2zPncUNznIKCwvQ'
+        client_secret: 'EPrt2r2g0y5Qy8Lmpm3CKx9NS7CoUAYkUleIBTFq1LA9cOPBdEj1fuP3vpCPSr_5A96TfgzEzPVfHnLV'
+
     -
-      domain: ilunafriq.ego.bid
-      folder: ilunafriq
-    
+      domain: ego.bid
+      folder: best
+
+currency: USD
 
 acc:
   captcha: false
@@ -106,9 +113,18 @@ collections:
   users: {}
   tree: {}
   files: {}
+  sites: {}
   stories: {}
   comments: {}
-  subscribers: {}
+  subscribers:
+    watch:
+      pipeline:
+        -
+          $match:
+            operationType: "update"
+      
+      on:
+        insert: true
   reviews: {}
   chats:
     watch:
@@ -133,6 +149,12 @@ tingoa:
   collections: [acc, users, catalog, files, tree, neuro, rates]
 
 trusted_emails: [mntask@gmail.com]
+
+paypal:
+  configure:
+    mode: 'sandbox'
+    client_id: 'AZLdLNV4Uya3uXQRrHkC45Ysc1MG427aEu5NVaje0XjWcXiufU9hP2SBmRDL0VSGQ2zPncUNznIKCwvQ'
+    client_secret: 'EPrt2r2g0y5Qy8Lmpm3CKx9NS7CoUAYkUleIBTFq1LA9cOPBdEj1fuP3vpCPSr_5A96TfgzEzPVfHnLV'
 
 social:
    -

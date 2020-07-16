@@ -33,6 +33,7 @@ global.coll = global.Coll = {
 };
 
 
+
 global.C = Coll.list;
 
 function analyze(c){
@@ -46,6 +47,7 @@ function analyze(c){
 
 			if(change.operationType == 'insert'){
 				let item = change.fullDocument;
+				if(!item.src) return;
 				var u = new URL(item.src);
                 
 				var cName = u.pathname.replace(/^\/|\/$/g, ''),
