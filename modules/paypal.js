@@ -36,48 +36,50 @@ S['paypal.order'] = (m, ws, cb) => {
 				cancel_url: "http://"+ws.domain+"/api/paypal/cancel"
 		   }
 	}
-	
+
 	let request = new paypal.orders.OrdersCreateRequest();
-    request.requestBody(pp_req);
-    
+	request.requestBody(pp_req);
+
 	client.execute(request).then(res => {
 		if(!res || !res.result) return cb({err: 'failed'});
 
         const result = res.result;
 
-		const links = {};
-		result.links.map(link => {
-			links[link.rel] = link.href;
-		});
+	const links = {};
+	result.links.map(link => {
+		links[link.rel] = link.href;
+	});
 
 
         if(result.status = 'CREATED'){
-			const item = {
-				id: result.id,
-				owner: user.email,
-				time: (new Date()).getTime(),
-				service: 'paypal',
-				currency,
-				price: m.price,
-				domain: ws.domain,
-				status: 'created',
-				approval_url: links.approve
-			};
+		const item = {
+			id: result.id,
+			owner: user.email,
+			time: (new Date()).getTime(),
+			service: 'paypal',
+			currency,
+			price: m.price,
+			domain: ws.domain,
+			status: 'created',
+			approval_url: links.approve
+		};
 
-			if(m.src) item.src = m.src;
+		if(m.src) item.src = m.src;
+		if(m.name) item.name = m.name;
+		if(m.value) item.value = m.value;
+		
+		db.collection('orders').insertOne(item, (err, res) => {
+			if(err || !res.ops || !res.ops.length)
+				return cb({error: err || false});
 			
-			db.collection('orders').insertOne(item, (err, res) => {
-				if(err || !res.ops || !res.ops.length)
-					return cb({error: err || false});
-
-				const ins = res.ops[0];
+			const ins = res.ops[0];
+			watch_id(ws, ins._id, item.id);
 
 		        cb({item});
-			});
+		});
         }
 	});
 }
-
 
 const payed = (src) => {
 	let u = new URL(src);
@@ -102,7 +104,7 @@ sys.on('loaded', ev => {
 				{_id: d.documentKey._id},
 				{src: 1, status: 1}, 
 				(e, item) => {
-					if(item.status == 'completed')
+					if(item.status == 'completed' && item.src)
 					    payed(item.src);
 				}
 			);
@@ -110,40 +112,40 @@ sys.on('loaded', ev => {
 	});
 });
 
-app.get('/api/paypal/return', (req, res) => {
-	const client = req.site?.paypal?.client;
-	if(!client) return cb({err: 'no client'});
+GET['/api/paypal/return'] = q => {
+	const client = q.site?.paypal?.client;
+	if(!client) return q.res.end('no client');
 
-	const id = req.query.token;
-	if(!id) return res.send('No token');
+	const id = q.query.token;
+	if(!id) return q.res.end('No token');
 
 	let request = new paypal.orders.OrdersCaptureRequest(id);
-    request.requestBody({});
+    	request.requestBody({});
 	client.execute(request).then(re => {
-		if(!re || !re.result) return res.send('failed');
+		if(!re || !re.result) return q.res.send('failed');
 		const result = re.result;
 
 		console.log(result);
 
-		if(result.status != 'COMPLETED') return res.send('Not completed');
+		if(result.status != 'COMPLETED') return q.res.send('Not completed');
 
 		db.collection('orders').findOneAndUpdate({id: result.id}, {$set: {
 			status: 'completed',
 			payer: result.payer,
 		}});
         
-		res.send(`
+		q.res.end(`
 			<body><script>
 				const isPC = typeof window.orientation == 'undefined';
 				if(isPC)
 					window.close();
 				else
-					location.href = "https://${req.hostname}";
+					location.href = "https://${q.domain}";
 			</script>Completed</body>
 		`);
 	}).catch(err => console.log(err));
-});
-
+};
+/*
 app.post('/api/paypal/hooks', (req, res) => {
 	//console.log('POST:', req);
 });
@@ -156,7 +158,7 @@ app.get('/pp', (req, res) => {
 	console.log('GERt:', req);
 		res.send('completed');
 });
-
+*/
 
 S['paypal.capture'] = (m, ws, cb) => {
 	if(!m.id) return cb({err: 'no id'});

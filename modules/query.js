@@ -1,21 +1,27 @@
 var util = require('util'),
 	qs = require('querystring'),
 	fs = require('fs'),
-	cookie = require('cookie');
+	cookie = require('cookie'),
+	Site = require('../ctrl/www/Site.js'),
+	sites = require('../ctrl/www/sites.js');
 
-var Query = function(req,res){
+const md5 = word => {
+	return require('crypto').createHash('md5').update(word).digest("hex");
+}
+
+global.Query = function(req,res){
 	this.r = {};
 	//req.setEncoding('utf8');
 	this.req = req;
 	this.res = res;
 	this.post = {};
 	this.date = new Date;
-	this.domain = (req.headers.host || '').toLowerCase().split(':')[0];
+	this.domain = (req.headers.host || req.headers[':authority'] || '').toLowerCase().split(':')[0];
 
 	this.ip = req.headers['x-forwarded-for'] ||
-     req.connection.remoteAddress ||
-     req.socket.remoteAddress ||
-     req.connection.socket.remoteAddress;
+	     req.connection.remoteAddress ||
+	     req.socket.remoteAddress ||
+	     req.connection.socket.remoteAddress;
 	this.ipn = query.ipv4Number(this.ip);
 
 	var Url = require('url').parse(req.url);
@@ -29,14 +35,20 @@ var Query = function(req,res){
 	this.lang = this.cookie.lang || cfg.lang;
 	this.p = this.uri.split(/[\/]+/);
 
-	if(this.cookie && this.cookie.sid){
-		this.sid = this.cookie.sid;
-		var ses = acc.sessions[this.cookie.sid];
-		if(ses){
-			this.session = ses;
-			this.user = ses.user;
-		}
-	}
+	const name = 'sid_'+md5(req.hostname),
+              ses_cookie = this.cookie[name];
+
+        this.session = Sessions[ses_cookie];
+
+        if(!req.session){
+                var sid = acc.createSession();
+                this.session = Sessions[sid];
+		res.setHeader('Set-Cookie', cookie.serialize(name, sid));
+        }
+
+	this.site = sites[this.domain];
+
+	query.constructors.forEach(c => c(this));
 }
 
 Query.prototype.end = function(j){
@@ -59,9 +71,11 @@ global.query = {
 		'htm': 'text/html',
 		'html': 'text/html',
 		'js': 'application/javascript',
-		'txt': 'text/plain'
+		'txt': 'text/plain',
+		'svg': 'image/svg+xml'
 	},
-
+	
+	constructors: [],
 	staticDomains: [],
 
 	route: function(p){
@@ -148,19 +162,21 @@ global.query = {
 
 	onGet: function(q){
 		var fn;
-		if(typeof Sites == 'object' && (site = Sites.domains[q.domain])){
-			site.request(q);
+		if(fn = GET[q.uri] || (fn = GET['/'+q.uri]) || (fn = GET[q.p[0]]))
+			fn(q);
+		else
+		if(q.site){
+			q.site.request(q);
 		}
 		else
 		if(q.p[0] && isInt(q.p[0]))
 			query.pumpFile(q, q.p[0], q.p[1]);
 		else
+		/*
 		if(fn = GET_[q.domain])
 			fn(q);
 		else
-		if(fn = GET[q.uri] || (fn = GET['/'+q.uri]) || (fn = GET[q.p[0]]))
-			fn(q);
-		else
+		*/
 		if(redirect = query.redirect[q.domain]){
 			if(typeof redirect == 'string'){
 				log(
@@ -207,12 +223,21 @@ global.query = {
 	},
 
 	onDomain: function(q){
-		log(
-			clc.blue.bold(q.req.connection.remoteAddress + "")+' '+
-			(q.date.getHours()+':'+q.date.getMinutes())+' '+
-			clc.red.italic(q.domain)
-		);
-		query.pump(q, './static/wrongDomain.html');
+		db.collection('sites').findOne({domain: q.domain}).then(item => {
+			if(item){
+				const site = q.site = sites[item.domain] = new Site(item);
+				site.request(q);
+				return;
+			}
+
+			log(
+				clc.blue.bold(q.req.connection.remoteAddress + "")+' '+
+				(q.date.getHours()+':'+q.date.getMinutes())+' '+
+				clc.red.italic(q.domain)
+			);
+
+			query.pump(q, './static/wrongDomain.html');
+		});
 	},
 
 	ipv4Number: function (ip){

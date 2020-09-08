@@ -9,6 +9,7 @@ sys.on('loaded', () => {
 	collection = db.collection(script_name);
 });
 
+/*
 app.get('/'+script_name+'/:name', (req, res) => {
 	const $ = cheerio.load(req.site.documents['index.html']);
 
@@ -30,3 +31,4 @@ app.get('/'+script_name+'/:name', (req, res) => {
 		res.send($.html());
 	});
 });
+*/

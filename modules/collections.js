@@ -178,8 +178,9 @@ S.save = function(m, ws, cb){
 		if(!m.item.id)
 			m.item.id = randomString(8);
 
-		m.item.domain = ws.domain;
-		
+		if(!m.item.domain)
+			m.item.domain = ws.domain;
+
 		c.collection.insertOne(m.item, function(err, res){
             if(err || !res.ops || !res.ops.length)
                 return cb({error: err || false});
@@ -191,6 +192,13 @@ S.save = function(m, ws, cb){
 		});
 	};
 
+	if(c.checks)
+		Promise.all(c.checks.map(
+			ch => require('../ctrl/checks/'+ch+'.js')(m.item)
+		)).then(save).catch(err => {
+			cb({error: err});
+		});
+	else
 	if(typeof c.collection.beforeSave == 'functon')
 		c.collection.beforeSave(m.item, function(d){
 			if(typeof d == 'string'){

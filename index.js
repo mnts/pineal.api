@@ -17,6 +17,8 @@ global.cookie = require('cookie');
 global.RE = {
 	void: function(m){}
 };
+global.POST = {};
+global.GET = {};
 global.S = {};
 global.Sessions = {};
 
@@ -42,7 +44,7 @@ stdin.on('data', input => {
 
 global.cfg = global.Cfg = YAML.load('./config.yaml');
 
-require('./ctrl/server.js');
+require('./ctrl/srv.js');
 
 var initiate = () => {
 	cfg.modules.forEach((name) => {
@@ -78,7 +80,7 @@ if(Cfg.mongodb){
 		}
 	).then(client => {
 		global.db = client.db(Cfg.mongodb.name);
-
+		console.log(db);
 		initiate();
 	}).catch(e => console.error('error', e));
 }

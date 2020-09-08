@@ -1,0 +1,20 @@
+async function pointed(domain){
+    const util = require('util');
+    const dns = require('dns');
+    const lookup = util.promisify(dns.lookup);
+    try {
+      result = await lookup(domain);
+      return result.address;
+    } catch (error) {
+      console.error(error)
+    }
+}
+
+async function check(item){
+	if(item.domain){
+		pointed(item.domain) == require('ip').address();
+	}
+	return true;
+}
+
+export default check;

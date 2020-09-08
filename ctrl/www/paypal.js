@@ -7,21 +7,22 @@ let environment = new paypal.core.SandboxEnvironment(
 
 let client = new paypal.core.PayPalHttpClient(environment);
 */
+process.on('loadedModules', ev => {
 
-app.use((req, res, next) => {
-    if(req.site && req.site.paypal && !req.site.paypal.client){
+query.constructors.push(q => {
+    if(q.site && q.site.paypal && !q.site.paypal.client){
         if(
-            req.site.paypal.client_id && 
-            req.site.paypal.client_secret
+            q.site.paypal.client_id && 
+            q.site.paypal.client_secret
         ){
             let environment = new paypal.core.SandboxEnvironment(
                 Cfg.paypal.configure.client_id, 
                 Cfg.paypal.configure.client_secret
             );
 
-            req.site.paypal.client = new paypal.core.PayPalHttpClient(environment);
+            q.site.paypal.client = new paypal.core.PayPalHttpClient(environment);
         }
     }
-	
-	next();
+});
+
 });
