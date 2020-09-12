@@ -356,18 +356,19 @@ S.update = function(m, ws, cb){
 	if(!user) return;
 
 	var c = Collections[m.collection || coll.main];
-	if(!c) return;
+	if(!c) return;c
 
 	var user = ws.session.user;
 	var filter = m.filter || _.pick(m, 'id');
 
-	if(user) filter.owner = user.email;
-	if(user && user.super) delete filter.owner;
+	//if(user) filter.owner = user.email;
+	//if(user && user.super) delete filter.owner;
 
 
 	var todo = {};
 
 	if(m.set){
+		console.log(user.email, m.set);
 		todo.$set = _.omit(m.set, '_id', 'id', 'owner', 'time');
 		todo.$set.updated = (new Date()).getTime();
 	}

@@ -32,16 +32,16 @@ global.socket = {
 		     req.socket.remoteAddress ||
 		     req.connection.socket.remoteAddress,
 			cookie = ws.cookie = require('cookie').parse(req.headers['cookie'] || '');
-		
+
 		let origin = req.headers.origin.replace(/^http(s?):\/\//i, "");
 		ws.domain = (origin || req.headers.host || '').toLowerCase().split(':')[0];
-        
-        ws.subscriptions = {};
+
+ 	        ws.subscriptions = {};
 
 		ws.location = {
 
 		};
-		
+
     /*
 		if(p[0])
 			(SOCK[p[0]] || fake)(ws);
@@ -138,6 +138,28 @@ S.listLocations = function(m, ws, cb){
 }
 
 
+S.locate = function(m, ws, cb){
+        let u = ws.session.user;
+        var inf = require('geoip-lite').lookup(ws.ip);
+	var coordinates =  m.lat?[m.lat, m.lng]:inf.ll;
+	ws.net = {
+        	timezone: inf.timezone,
+        	cc: inf.countrycode,
+        	city: inf.city,
+        	location: {
+        	        type: 'Point',
+        	        coordinates
+        	},
+        	updated: (new Date).getTime()
+	};
+
+        if(u && u.email) db.collection('users').update(
+		{owner: u.email}, {$set: {location: ws.net.location}}
+	);
+
+	cb({net: ws.net});
+}
+
 global.SOCKET = function(ws){
 	_.extend(ws, SOCKET_prototype);
 	
@@ -162,8 +184,24 @@ global.SOCKET = function(ws){
 
 
 	let u = ws.session.user;
-	if(u && u.id)
+	if(u && u.id){
 		PubSub.publish(`user.${u.id}.connected`);
+		var locate = new Promise((ok, no) => {
+			console.log(ws.ip);
+			var inf = require('geoip-lite').lookup(ws.ip);
+			console.log('Connected: ',u.email, inf);
+			db.collection('users').update({owner: u.email}, {$set: {
+				timezone: inf.timezone,
+				cc: inf.countrycode,
+				city: inf.city,
+				location: {
+					type: 'Point',
+					coordinates: inf.ll
+				},
+				updated: (new Date).getTime()
+			}});
+		});
+	}
 
 	ws.on('message', function(msg){
 		if(typeof msg == 'string'){
