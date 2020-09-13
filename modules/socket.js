@@ -141,7 +141,7 @@ S.listLocations = function(m, ws, cb){
 S.locate = function(m, ws, cb){
         let u = ws.session.user;
         var inf = require('geoip-lite').lookup(ws.ip);
-	var coordinates =  m.lat?[m.lat, m.lng]:inf.ll;
+	var coordinates =  m.lat?[m.lng, m.lat]:[inf.ll[1], inf.ll[0]];
 	ws.net = {
         	timezone: inf.timezone,
         	cc: inf.countrycode,
@@ -196,7 +196,7 @@ global.SOCKET = function(ws){
 				city: inf.city,
 				location: {
 					type: 'Point',
-					coordinates: inf.ll
+					coordinates: [inf.ll[1], inf.ll[0]]
 				},
 				updated: (new Date).getTime()
 			}});

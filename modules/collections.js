@@ -39,7 +39,6 @@ global.C = Coll.list;
 function analyze(c){
 	if(c.watch){
 		c.collection.watch().on('change', (change) => {
-			console.log(change);
 			PubSub.publish(`collections.${c.name}.change`, change);
             
 			if(change.operationType == 'update' || change.operationType == 'replace')
@@ -285,7 +284,7 @@ S.load = S.find = function(m, ws, cb){
 		if(err) console.log(err.toString().red);
 
 		(list || []).forEach(item => {
-            watch_id(ws, item._id, item.id);
+		        watch_id(ws, item._id, item.id);
 			if(!user || !user.super) cleanItem(item);
 		});
 
@@ -368,7 +367,6 @@ S.update = function(m, ws, cb){
 	var todo = {};
 
 	if(m.set){
-		console.log(user.email, m.set);
 		todo.$set = _.omit(m.set, '_id', 'id', 'owner', 'time');
 		todo.$set.updated = (new Date()).getTime();
 	}
